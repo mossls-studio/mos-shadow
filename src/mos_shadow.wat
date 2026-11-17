@@ -93,6 +93,9 @@
   (global $CRF (mut f32) (f32.const 0))
   (global $CGF (mut f32) (f32.const 0))
   (global $CBF (mut f32) (f32.const 0))
+  (global $AVGR (mut f32) (f32.const 0))
+  (global $AVGG (mut f32) (f32.const 0))
+  (global $AVGB (mut f32) (f32.const 0))
   (global $FADEK (mut f64) (f64.const 1))
   (global $COPAC (mut f64) (f64.const 1))
 
@@ -185,9 +188,11 @@
     local.get $c local.get $d local.get $c f32.sub local.get $fx f32.mul f32.add local.set $bot
     local.get $top local.get $bot local.get $top f32.sub local.get $fy f32.mul f32.add)
 
-  ;; 最近邻采样源 RGB（premultiplied 像素，除以采样 alpha 还原颜色）
+  ;; 3×3 最大 alpha 邻域取色：避免采样到抗锯齿/透明边缘的浅色像素
   (func $sampleRGB (param $px f64) (param $py f64) (param $out i32) (param $a f32)
-    (local $x i32) (local $y i32) (local $p i32) (local $inv f32)
+    (local $cx i32) (local $cy i32) (local $x i32) (local $y i32)
+    (local $xx i32) (local $yy i32) (local $p i32) (local $bp i32)
+    (local $aa f32) (local $ba f32) (local $inv f32)
     local.get $px f64.const 0 f64.lt
     local.get $py f64.const 0 f64.lt i32.or
     local.get $px global.get $W f64.convert_i32_s f64.const 1 f64.sub f64.gt i32.or
@@ -198,21 +203,45 @@
       local.get $out f32.const 0 f32.store offset=8
       return))
     local.get $px i32.trunc_f64_s i32.const 0 call $imax
-    global.get $W i32.const 1 i32.sub call $imin local.set $x
+    global.get $W i32.const 1 i32.sub call $imin local.set $cx
     local.get $py i32.trunc_f64_s i32.const 0 call $imax
-    global.get $H i32.const 1 i32.sub call $imin local.set $y
-    global.get $PIX
-    local.get $y global.get $W i32.mul local.get $x i32.add i32.const 4 i32.shl i32.add
-    local.set $p
-    local.get $a f32.const 0.001 f32.gt
+    global.get $H i32.const 1 i32.sub call $imin local.set $cy
+    f32.const 0 local.set $ba
+    i32.const 0 local.set $bp
+    local.get $cy i32.const 1 i32.sub local.set $y
+    (block $ey (loop $ly
+      local.get $y local.get $cy i32.const 1 i32.add i32.gt_s br_if $ey
+      local.get $cx i32.const 1 i32.sub local.set $x
+      (block $ex (loop $lx
+        local.get $x local.get $cx i32.const 1 i32.add i32.gt_s br_if $ex
+        local.get $x i32.const 0 call $imax
+        global.get $W i32.const 1 i32.sub call $imin local.set $xx
+        local.get $y i32.const 0 call $imax
+        global.get $H i32.const 1 i32.sub call $imin local.set $yy
+        global.get $PIX
+        local.get $yy global.get $W i32.mul local.get $xx i32.add i32.const 4 i32.shl i32.add
+        local.set $p
+        local.get $p f32.load offset=12 local.set $aa
+        local.get $aa local.get $ba f32.gt
+        (if (then
+          local.get $aa local.set $ba
+          local.get $p local.set $bp))
+        local.get $x i32.const 1 i32.add local.set $x
+        br $lx))
+      local.get $y i32.const 1 i32.add local.set $y
+      br $ly))
+    local.get $ba f32.const 0.001 f32.gt
     (if (then
-      f32.const 1 local.get $a f32.div local.set $inv
+      f32.const 1 local.get $ba f32.div local.set $inv
       local.get $out
-      local.get $p f32.load local.get $inv f32.mul f32.store
+      local.get $bp f32.load local.get $inv f32.mul
+      f32.store
       local.get $out
-      local.get $p f32.load offset=4 local.get $inv f32.mul f32.store offset=4
+      local.get $bp f32.load offset=4 local.get $inv f32.mul
+      f32.store offset=4
       local.get $out
-      local.get $p f32.load offset=8 local.get $inv f32.mul f32.store offset=8)
+      local.get $bp f32.load offset=8 local.get $inv f32.mul
+      f32.store offset=8)
       (else
         local.get $out f32.const 0 f32.store
         local.get $out f32.const 0 f32.store offset=4
@@ -344,7 +373,7 @@
 
   ;; ================= horizontal variable box blur =================
   ;; SH -> TMP，只处理 FX0..FX1 / FY0..FY1
-  (func $blurH
+  (func $blurH (param $src i32) (param $dst i32)
     (local $y i32) (local $x i32)
     (local $srow i32) (local $trow i32) (local $rbase i32)
     (local $r i32) (local $tl i32) (local $tr i32)
@@ -354,10 +383,10 @@
     (block $yend
       (loop $yl
         local.get $y global.get $FY1 i32.gt_s br_if $yend
-        global.get $SH
+        local.get $src
         local.get $y global.get $W i32.mul i32.const 2 i32.shl i32.add
         local.set $srow
-        global.get $TMP
+        local.get $dst
         local.get $y global.get $W i32.mul i32.const 2 i32.shl i32.add
         local.set $trow
         global.get $RAD
@@ -436,7 +465,7 @@
 
   ;; ================= vertical variable box blur =================
   ;; TMP -> SH，只处理 FX0..FX1 / FY0..FY1
-  (func $blurV
+  (func $blurV (param $src i32) (param $dst i32)
     (local $x i32) (local $y i32)
     (local $sbase i32) (local $tbase i32) (local $rbase i32)
     (local $r i32) (local $tt i32) (local $tb i32)
@@ -446,8 +475,8 @@
     (block $xend
       (loop $xl
         local.get $x global.get $FX1 i32.gt_s br_if $xend
-        global.get $SH local.get $x i32.const 2 i32.shl i32.add local.set $sbase
-        global.get $TMP local.get $x i32.const 2 i32.shl i32.add local.set $tbase
+        local.get $src local.get $x i32.const 2 i32.shl i32.add local.set $sbase
+        local.get $dst local.get $x i32.const 2 i32.shl i32.add local.set $tbase
         global.get $RAD
         global.get $FY0 global.get $W i32.mul local.get $x i32.add i32.const 2 i32.shl i32.add
         local.set $rbase
@@ -461,7 +490,7 @@
           (loop $il
             local.get $y local.get $bot i32.gt_s br_if $iend
             local.get $sum
-            local.get $tbase
+            local.get $sbase
             local.get $y global.get $W i32.mul i32.const 2 i32.shl i32.add
             f32.load f32.add local.set $sum
             local.get $y i32.const 1 i32.add local.set $y
@@ -484,7 +513,7 @@
                 (loop $ll
                   local.get $top local.get $tt i32.ge_s br_if $lend
                   local.get $sum
-                  local.get $tbase
+                  local.get $sbase
                   local.get $top global.get $W i32.mul i32.const 2 i32.shl i32.add
                   f32.load f32.sub local.set $sum
                   local.get $top i32.const 1 i32.add local.set $top
@@ -494,7 +523,7 @@
                   local.get $top local.get $tt i32.le_s br_if $lend2
                   local.get $top i32.const 1 i32.sub local.set $top
                   local.get $sum
-                  local.get $tbase
+                  local.get $sbase
                   local.get $top global.get $W i32.mul i32.const 2 i32.shl i32.add
                   f32.load f32.add local.set $sum
                   br $ll2))
@@ -504,7 +533,7 @@
                   local.get $bot local.get $tb i32.ge_s br_if $rend
                   local.get $bot i32.const 1 i32.add local.set $bot
                   local.get $sum
-                  local.get $tbase
+                  local.get $sbase
                   local.get $bot global.get $W i32.mul i32.const 2 i32.shl i32.add
                   f32.load f32.add local.set $sum
                   br $rl))
@@ -512,12 +541,12 @@
                 (loop $rl2
                   local.get $bot local.get $tb i32.le_s br_if $rend2
                   local.get $sum
-                  local.get $tbase
+                  local.get $sbase
                   local.get $bot global.get $W i32.mul i32.const 2 i32.shl i32.add
                   f32.load f32.sub local.set $sum
                   local.get $bot i32.const 1 i32.sub local.set $bot
                   br $rl2))))
-            local.get $sbase
+            local.get $tbase
             local.get $y global.get $W i32.mul i32.const 2 i32.shl i32.add
             local.get $sum f32.const 0 f32.max
             local.get $bot local.get $top i32.sub i32.const 1 i32.add
@@ -529,6 +558,35 @@
         local.get $x i32.const 1 i32.add local.set $x
         br $xl)))
 
+  ;; 把 TMP 里的 RGB 样本写入三个颜色平面
+  (func $storeRGB (param $idx i32) (param $plane i32)
+    (local $d i32)
+    global.get $COL local.get $idx i32.const 2 i32.shl i32.add local.set $d
+    local.get $d
+    global.get $TMP f32.load f32.store
+    local.get $d local.get $plane i32.add
+    global.get $TMP f32.load offset=4 f32.store
+    local.get $d local.get $plane i32.const 2 i32.mul i32.add
+    global.get $TMP f32.load offset=8 f32.store)
+
+  ;; 平均颜色写入三个颜色平面
+  (func $storeAvgRGB (param $idx i32) (param $plane i32)
+    (local $d i32)
+    global.get $COL local.get $idx i32.const 2 i32.shl i32.add local.set $d
+    local.get $d global.get $AVGR f32.store
+    local.get $d local.get $plane i32.add global.get $AVGG f32.store
+    local.get $d local.get $plane i32.const 2 i32.mul i32.add global.get $AVGB f32.store)
+
+  ;; 内部用逐像素色，边缘/外部用平均色
+  (func $colorAt (param $sx f64) (param $sy f64) (param $av f32) (param $idx i32) (param $plane i32)
+    local.get $av f32.const 0.5 f32.gt
+    (if
+      (then
+        local.get $sx local.get $sy global.get $TMP local.get $av call $sampleRGB
+        local.get $idx local.get $plane call $storeRGB)
+      (else
+        local.get $idx local.get $plane call $storeAvgRGB)))
+
   ;; ================= render =================
   (func (export "ec_render")
     (param $pixels i32) (param $w i32) (param $h i32)
@@ -536,10 +594,12 @@
     (param $time f64) (param $scale f64) (result i32)
     (local $i i32) (local $x i32) (local $y i32)
     (local $p i32) (local $q i32) (local $cp i32) (local $idx i32) (local $plane i32)
+    (local $sh f32)
     (local $dx f64) (local $dy f64) (local $len f64)
     (local $mx f64) (local $my f64)
     (local $wx f64) (local $wy f64) (local $wn f64)
     (local $hmin f64) (local $hmax f64) (local $hh f64)
+    (local $ar f64) (local $ag f64) (local $ab f64) (local $aa f64)
     (local $anchor f64) (local $far f64) (local $span f64)
     (local $t0 f64) (local $dt f64) (local $t f64)
     (local $dh f64) (local $du f64) (local $dsx f64) (local $dsy f64)
@@ -705,6 +765,14 @@
             local.get $av f32.store
             local.get $av f32.const 0.004 f32.gt
             (if (then
+              ;; source=2 的平均颜色（只统计近不透明像素）
+              global.get $SRC_MODE i32.const 2 i32.eq
+              local.get $av f32.const 0.9 f32.gt i32.and
+              (if (then
+                local.get $ar local.get $p f32.load f64.promote_f32 f64.add local.set $ar
+                local.get $ag local.get $p f32.load offset=4 f64.promote_f32 f64.add local.set $ag
+                local.get $ab local.get $p f32.load offset=8 f64.promote_f32 f64.add local.set $ab
+                local.get $aa local.get $av f64.promote_f32 f64.add local.set $aa))
               local.get $x local.get $kx0 i32.lt_s
               (if (then local.get $x local.set $kx0))
               local.get $x local.get $kx1 i32.gt_s
@@ -725,6 +793,12 @@
             br $xl))
         local.get $y i32.const 1 i32.add local.set $y
         br $yl))
+    ;; 平均颜色（source=2 的边缘/外部用）
+    local.get $aa f64.const 0.001 f64.gt
+    (if (then
+      local.get $ar local.get $aa f64.div f32.demote_f64 global.set $AVGR
+      local.get $ag local.get $aa f64.div f32.demote_f64 global.set $AVGG
+      local.get $ab local.get $aa f64.div f32.demote_f64 global.set $AVGB))
     local.get $kx1 i32.const 0 i32.lt_s
     (if (then call $noShadow return))
 
@@ -931,9 +1005,7 @@
         global.get $RAD
         local.get $y global.get $W i32.mul local.get $fx0 i32.add i32.const 2 i32.shl i32.add
         local.set $q
-        global.get $COL
-        local.get $y global.get $W i32.mul local.get $fx0 i32.add i32.const 12 i32.mul i32.add
-        local.set $cp
+        global.get $TMP local.set $cp
         local.get $fx0 local.set $x
         (block $fxend
           (loop $fxl
@@ -993,7 +1065,10 @@
                 local.get $p local.get $av f32.store
                 global.get $SRC_MODE i32.const 2 i32.eq
                 (if (then
-                  local.get $sx local.get $sy local.get $cp local.get $av call $sampleRGB))
+                  local.get $sx local.get $sy local.get $av
+                  local.get $p global.get $SH i32.sub i32.const 2 i32.shr_s
+                  local.get $plane
+                  call $colorAt))
                 local.get $q local.get $t call $radT i32.store)))
               (else
                 local.get $t f64.const 0 f64.ge
@@ -1003,7 +1078,10 @@
                   local.get $p local.get $av f32.store
                   global.get $SRC_MODE i32.const 2 i32.eq
                   (if (then
-                    local.get $sx local.get $sy local.get $cp local.get $av call $sampleRGB))
+                    local.get $sx local.get $sy local.get $av
+                  local.get $p global.get $SH i32.sub i32.const 2 i32.shr_s
+                  local.get $plane
+                  call $colorAt))
                   local.get $q
                   local.get $t call $radT i32.store))
                 local.get $t local.get $dt f64.add local.set $t
@@ -1023,7 +1101,6 @@
                     local.get $hh global.get $NY f64.mul f64.add local.set $sy))))
             local.get $p i32.const 4 i32.add local.set $p
             local.get $q i32.const 4 i32.add local.set $q
-            local.get $cp i32.const 12 i32.add local.set $cp
             local.get $x i32.const 1 i32.add local.set $x
             br $fxl))
         local.get $y i32.const 1 i32.add local.set $y
@@ -1032,8 +1109,8 @@
     ;; ---- 渐进模糊 ----
     global.get $BLUR f64.const 0.001 f64.gt
     (if (then
-      call $blurH
-      call $blurV))
+      global.get $SH global.get $TMP call $blurH
+      global.get $TMP global.get $SH call $blurV))
 
     ;; ---- 合成 ----
     global.get $ONLY
@@ -1050,7 +1127,7 @@
         local.get $t0 local.set $t
         local.get $fx0 local.set $x
         global.get $COL
-        local.get $y global.get $W i32.mul local.get $fx0 i32.add i32.const 12 i32.mul i32.add
+        local.get $y global.get $W i32.mul local.get $fx0 i32.add i32.const 2 i32.shl i32.add
         local.set $cp
         (block $cxend
           (loop $cxl
@@ -1069,15 +1146,16 @@
             global.get $SH
             local.get $y global.get $W i32.mul local.get $x i32.add
             i32.const 2 i32.shl i32.add
-            f32.load local.get $fade f32.mul local.set $sa
+            f32.load local.set $sh
+            local.get $sh local.get $fade f32.mul local.set $sa
             local.get $sa f32.const 0 f32.max f32.const 1 f32.min local.set $sa
             local.get $y global.get $W i32.mul local.get $x i32.add
             i32.const 4 i32.shl global.get $PIX i32.add local.set $p
             global.get $SRC_MODE i32.const 2 i32.eq
             (if (then
               local.get $cp f32.load local.set $cr
-              local.get $cp f32.load offset=4 local.set $cg
-              local.get $cp f32.load offset=8 local.set $cb)
+              local.get $cp local.get $plane i32.add f32.load local.set $cg
+              local.get $cp local.get $plane i32.const 2 i32.mul i32.add f32.load local.set $cb)
               (else
                 global.get $CRF local.set $cr
                 global.get $CGF local.set $cg
@@ -1127,7 +1205,7 @@
             global.get $BENDON
             i32.eqz
             (if (then local.get $t local.get $dt f64.add local.set $t))
-            local.get $cp i32.const 12 i32.add local.set $cp
+            local.get $cp i32.const 4 i32.add local.set $cp
             local.get $x i32.const 1 i32.add local.set $x
             br $cxl))
         local.get $y i32.const 1 i32.add local.set $y
