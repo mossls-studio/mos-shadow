@@ -1,0 +1,7 @@
+[
+  {"id":"effect.plugins.load","params":{"path":"D:\\mossls\\mos\\vfx\\mos_阴影\\dist\\mos_shadow\\mos_shadow.wasm"}},
+  {"id":"comp.new","params":{"name":"Inspect","width":640,"height":360,"frameRate":30,"duration":2,"background":"#808080"}},
+  {"id":"layer.newText","params":{"text":"TEST","size":80,"fill":"#ffffff","position":[320,180],"font":"Inter","style":"Bold"}},
+  {"id":"effect.apply","params":{"layer":"#1","effect":"mos.shadow"}},
+  {"id":"layer.tree","params":{"layer":"#1","depth":3}}
+]

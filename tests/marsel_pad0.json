@@ -1,0 +1,17 @@
+[
+  {"id":"effect.plugins.load","params":{"path":"C:\\Users\\koggua\\AppData\\Roaming\\EffectCraft\\Plug-ins\\marsel-prism-drop-shadow.wasm"}},
+  {"id":"comp.new","params":{"name":"MarselPad","width":1280,"height":720,"frameRate":30,"duration":3,"background":"#cfd0d4"}},
+  {"id":"file.import","params":{"paths":["D:\\mossls\\mos\\vfx\\mos_阴影\\tests\\star.png"],"addToComp":true}},
+  {"id":"prop.set","params":{"layer":"#1","path":"transform/position","value":[640,360]}},
+  {"id":"effect.apply","params":{"layer":"#1","effect":"org.marsel.color.drop-shadow"}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/shadow_opacity","value":100}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/distance","value":120}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/direction","value":45}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/shadow_softness","value":0}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/shadow_only","value":true}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/color_1","value":[1,0,0,1]}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/color_2","value":[1,0,0,1]}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/padding","value":0}},
+  {"id":"renderQueue.add","params":{"comp":1,"format":"png","output":"D:\\mossls\\mos\\vfx\\mos_阴影\\tests\\marsel0\\frame.png","timeSpan":"custom","start":0,"end":0.03,"frameRate":30,"channels":"rgb"}},
+  {"id":"renderQueue.render","params":{"wait":true}}
+]

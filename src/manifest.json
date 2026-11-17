@@ -1,0 +1,25 @@
+{
+  "api": 1,
+  "id": "mos.shadow",
+  "name": "mos_shadow",
+  "category": "MOS",
+  "version": "0.4.0",
+  "author": "MOSSLS",
+  "description": "方向轴阴影：用一条基线（两个点）和第三个点定义投影方向与长度，把图层轮廓压平后沿轴拉伸成阴影；离基线越远越模糊、越透明，颜色可调；远端放大可让阴影离基线越远越宽。",
+  "params": [
+    {"id": "axis_start", "name": "基线起点", "type": "point", "default": [0.12, 0.62]},
+    {"id": "axis_end", "name": "基线终点", "type": "point", "default": [0.88, 0.62]},
+    {"id": "aim", "name": "方向/长度", "type": "point", "default": [0.70, 0.24]},
+    {"id": "blur", "name": "最大模糊", "type": "slider", "default": 24, "min": 0, "max": 300, "decimals": 1},
+    {"id": "blur_start", "name": "模糊起点", "type": "slider", "default": 10, "min": 0, "max": 100, "decimals": 0},
+    {"id": "blur_end", "name": "模糊终点", "type": "slider", "default": 100, "min": 0, "max": 100, "decimals": 0},
+    {"id": "opacity", "name": "不透明度", "type": "slider", "default": 80, "min": 0, "max": 100, "decimals": 0},
+    {"id": "fade_start", "name": "淡出起点", "type": "slider", "default": 20, "min": 0, "max": 100, "decimals": 0},
+    {"id": "fade_end", "name": "淡出终点", "type": "slider", "default": 100, "min": 0, "max": 100, "decimals": 0},
+    {"id": "color", "name": "阴影颜色", "type": "color", "default": [0.02, 0.02, 0.03, 1.0]},
+    {"id": "source", "name": "阴影源", "type": "popup", "options": ["Alpha", "Luminance"], "default": 0},
+    {"id": "behind", "name": "阴影在图层后", "type": "checkbox", "default": true},
+    {"id": "only_shadow", "name": "只显示阴影", "type": "checkbox", "default": false},
+    {"id": "expand", "name": "远端放大", "type": "slider", "default": 0, "min": -100, "max": 200, "decimals": 0}
+  ]
+}

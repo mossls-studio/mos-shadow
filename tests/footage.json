@@ -1,0 +1,18 @@
+[
+  {"id":"effect.plugins.load","params":{"path":"D:\\mossls\\mos\\vfx\\mos_阴影\\dist\\mos_shadow\\mos_shadow.wasm"}},
+  {"id":"comp.new","params":{"name":"FootageTest","width":1280,"height":720,"frameRate":30,"duration":3,"background":"#cfd0d4"}},
+  {"id":"file.import","params":{"paths":["D:\\mossls\\mos\\vfx\\mos_阴影\\tests\\star.png"],"addToComp":true}},
+  {"id":"prop.set","params":{"layer":"#1","path":"transform/position","value":[640,360]}},
+  {"id":"effect.apply","params":{"layer":"#1","effect":"mos.shadow"}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/axis_start","value":[48,248]}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/axis_end","value":[352,248]}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/aim","value":[280,96]}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/only_shadow","value":true}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/opacity","value":100}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/blur","value":0}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/fade_start","value":100}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/fade_end","value":100}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/color","value":[1,0,0,1]}},
+  {"id":"renderQueue.add","params":{"comp":1,"format":"png","output":"D:\\mossls\\mos\\vfx\\mos_阴影\\tests\\footage\\frame.png","timeSpan":"custom","start":0,"end":0.03,"frameRate":30,"channels":"rgb"}},
+  {"id":"renderQueue.render","params":{"wait":true}}
+]

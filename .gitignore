@@ -1,0 +1,8 @@
+node_modules/
+build/
+_ref/
+tests/*
+!tests/*.json
+demo/EffectCraft Auto-Save/
+docs/effect-controls.png
+*.log
