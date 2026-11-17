@@ -1,6 +1,6 @@
 {
   "name": "mos-shadow",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "private": true,
   "description": "EffectCraft 效果插件 mos_shadow（MOS 套件）",
   "scripts": {
