@@ -1,11 +1,19 @@
-// build.js — 编译 src/mos_shadow.wat → dist/mos_shadow/mos_shadow.wasm
-// 并组装可安装的插件 bundle
+// build.js — 编译 src/mos_shadow.wat（内嵌 manifest）→ dist/zh + dist/en
+//   node build.js              构建 zh 与 en 两套
+//   node build.js --lang=en    只构建 en
+// 语言覆盖表在 src/i18n.json，未列出的字段沿用 src/manifest.json。
 const fs = require('fs');
 const path = require('path');
 
 const ROOT = __dirname;
-const NAME = 'mos_shadow';
+const NAME = 'mos_shadow';          // 旧版 dist 目录别名（zh）
 const WASM_NAME = 'mos_shadow.wasm';
+const WAT_NAME = 'mos_shadow.wat';
+const LANGS = ['zh', 'en'];
+const PREVIEWS = [
+  'preview.png', 'preview-expand.png', 'preview-bend.png', 'preview-bend-smooth.png',
+  'preview-layer-color.png', 'preview-layer-color-text.png',
+];
 
 function escapeWatString(bytes) {
   let out = '';
@@ -17,12 +25,41 @@ function escapeWatString(bytes) {
   return out;
 }
 
-async function main() {
-  const manifestSrc = fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8');
-  const manifest = JSON.stringify(JSON.parse(manifestSrc));
+function pickLang(value, lang) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  if (!Object.prototype.hasOwnProperty.call(value, lang)) return undefined;
+  return value[lang];
+}
+
+function localize(base, overlay, lang) {
+  const out = JSON.parse(JSON.stringify(base));
+  for (const key of ['category', 'name', 'description']) {
+    const v = pickLang(overlay[key], lang);
+    if (typeof v === 'string') out[key] = v;
+  }
+  const groups = overlay.groups || {};
+  const perParam = overlay.params || {};
+  for (const p of out.params) {
+    const po = perParam[p.id];
+    if (po) {
+      const n = pickLang(po.name, lang);
+      if (typeof n === 'string') p.name = n;
+      const opts = pickLang(po.options, lang);
+      if (Array.isArray(opts)) p.options = opts;
+    }
+    if (p.group && groups[p.group]) {
+      const g = pickLang(groups[p.group], lang);
+      if (typeof g === 'string') p.group = g;
+    }
+  }
+  return out;
+}
+
+async function buildLang(lang, base, overlay, wabt) {
+  const manifest = JSON.stringify(localize(base, overlay, lang));
   const mbytes = Buffer.from(manifest, 'utf8');
 
-  let wat = fs.readFileSync(path.join(ROOT, 'src', 'mos_shadow.wat'), 'utf8');
+  let wat = fs.readFileSync(path.join(ROOT, 'src', WAT_NAME), 'utf8');
   if (!wat.includes('__MANIFEST_BYTES__')) throw new Error('wat: missing __MANIFEST_BYTES__ placeholder');
   wat = wat
     .replace('__MANIFEST_BYTES__', escapeWatString(mbytes))
@@ -30,29 +67,29 @@ async function main() {
 
   const buildDir = path.join(ROOT, 'build');
   fs.mkdirSync(buildDir, { recursive: true });
-  fs.writeFileSync(path.join(buildDir, 'mos_shadow.wat'), wat, 'utf8');
+  fs.writeFileSync(path.join(buildDir, WAT_NAME), wat, 'utf8');
+  fs.writeFileSync(path.join(buildDir, `manifest.${lang}.json`), manifest + '\n');
 
-  const wabtFactory = require('wabt');
-  const wabt = await wabtFactory();
   // wabt 1.0.39 的词法器对源码里的非 ASCII 字节（只可能出现在注释里）会误报
   // `unexpected char`，所以喂给解析器之前把它们换成空格；写回 build/ 的仍是原文。
   const watForParse = wat.replace(/[^\x00-\x7F]/g, ' ');
   let mod;
   try {
-    mod = wabt.parseWat('mos_shadow.wat', watForParse, {});
+    mod = wabt.parseWat(WAT_NAME, watForParse, {});
     mod.resolveNames();
     mod.validate();
   } catch (e) {
-    console.error('WAT 编译失败:\n' + (e && e.message ? e.message : e));
+    console.error(`WAT 编译失败 [${lang}]:\n` + (e && e.message ? e.message : e));
     process.exit(1);
   }
-  const { buffer } = mod.toBinary({ log: false, write_debug_names: false });
-  const wasm = Buffer.from(buffer);
+  const wasm = Buffer.from(mod.toBinary({ log: false, write_debug_names: false }).buffer);
 
-  const distDir = path.join(ROOT, 'dist', NAME);
+  const distDir = path.join(ROOT, 'dist', lang);
   fs.mkdirSync(distDir, { recursive: true });
   fs.writeFileSync(path.join(distDir, WASM_NAME), wasm);
-  fs.writeFileSync(path.join(ROOT, 'build', 'manifest.json'), manifest + '\n');
+
+  const readme = path.join(ROOT, `README.${lang}.md`);
+  fs.copyFileSync(fs.existsSync(readme) ? readme : path.join(ROOT, 'README.md'), path.join(distDir, 'README.md'));
 
   const panelDir = path.join(ROOT, 'panel');
   if (fs.existsSync(panelDir)) {
@@ -60,11 +97,7 @@ async function main() {
       fs.copyFileSync(path.join(panelDir, f), path.join(distDir, f));
     }
   }
-  for (const f of ['README.md']) {
-    const p = path.join(ROOT, f);
-    if (fs.existsSync(p)) fs.copyFileSync(p, path.join(distDir, f));
-  }
-  for (const f of ['preview.png', 'preview-expand.png', 'preview-bend.png', 'preview-bend-smooth.png', 'preview-layer-color.png', 'preview-layer-color-text.png']) {
+  for (const f of PREVIEWS) {
     const p = path.join(ROOT, 'docs', f);
     if (fs.existsSync(p)) {
       fs.mkdirSync(path.join(distDir, 'docs'), { recursive: true });
@@ -72,8 +105,25 @@ async function main() {
     }
   }
 
-  console.log(`OK  wasm ${wasm.length} bytes  manifest ${mbytes.length} bytes  ->  ${distDir}`);
-  console.log(fs.readdirSync(distDir).join('  '));
+  if (lang === 'zh') { // 旧工具仍指向 dist/mos_shadow/，保留一份别名
+    const legacy = path.join(ROOT, 'dist', NAME);
+    fs.mkdirSync(legacy, { recursive: true });
+    fs.copyFileSync(path.join(distDir, WASM_NAME), path.join(legacy, WASM_NAME));
+  }
+
+  console.log(`OK  [${lang}]  wasm ${wasm.length} bytes  manifest ${mbytes.length} bytes  ->  ${distDir}`);
+}
+
+async function main() {
+  const langArg = process.argv.find((a) => a.startsWith('--lang='));
+  const langs = langArg ? [langArg.split('=')[1]] : LANGS;
+  for (const l of langs) {
+    if (!LANGS.includes(l)) throw new Error(`unknown --lang ${l} (expected zh|en)`);
+  }
+  const base = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'));
+  const overlay = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'i18n.json'), 'utf8'));
+  const wabt = await require('wabt')();
+  for (const lang of langs) await buildLang(lang, base, overlay, wabt);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

@@ -1,0 +1,41 @@
+{
+  "$comment": "Localization overlay for src/manifest.json. build.js applies the selected language over the source manifest; anything not listed here falls back to the source value.",
+  "category": { "zh": "MOS 视效", "en": "MOS VFX" },
+  "name": { "zh": "mos_阴影", "en": "mos_shadow" },
+  "description": {
+    "zh": "方向轴阴影：用一条基线（两个点）和第三个点定义投影方向与长度，把图层轮廓压平后沿轴拉伸成阴影；离基线越远越模糊、越透明，颜色可调；可选直角/平滑二次弯折，可用原图层颜色，模糊与淡出可单独开关。",
+    "en": "Directional-axis shadow: two baseline points plus a third point define the projection direction and length. The layer silhouette is flattened and stretched along that axis into a shadow; blur and transparency grow with distance from the baseline and the colour is adjustable. Optional hard or smooth quadratic bend, optional original-layer colour source, and separate blur/fade switches."
+  },
+  "groups": {
+    "模糊和颜色": { "zh": "模糊和颜色", "en": "Blur & Color" },
+    "弯折": { "zh": "弯折", "en": "Bend" }
+  },
+  "params": {
+    "axis_start": { "name": { "zh": "基线起点", "en": "Baseline Start" } },
+    "axis_end": { "name": { "zh": "基线终点", "en": "Baseline End" } },
+    "aim": { "name": { "zh": "方向/长度", "en": "Direction / Length" } },
+    "blur_on": { "name": { "zh": "启用模糊", "en": "Blur" } },
+    "blur": { "name": { "zh": "最大模糊", "en": "Max Blur" } },
+    "blur_start": { "name": { "zh": "模糊起点", "en": "Blur Start" } },
+    "blur_end": { "name": { "zh": "模糊终点", "en": "Blur End" } },
+    "fade_on": { "name": { "zh": "启用淡出", "en": "Fade" } },
+    "opacity": { "name": { "zh": "不透明度", "en": "Opacity" } },
+    "fade_start": { "name": { "zh": "淡出起点", "en": "Fade Start" } },
+    "fade_end": { "name": { "zh": "淡出终点", "en": "Fade End" } },
+    "color": { "name": { "zh": "阴影颜色", "en": "Shadow Color" } },
+    "color_opacity": { "name": { "zh": "颜色不透明度", "en": "Color Opacity" } },
+    "source": {
+      "name": { "zh": "阴影源", "en": "Shadow Source" },
+      "options": {
+        "zh": ["Alpha", "Luminance", "原图层颜色"],
+        "en": ["Alpha", "Luminance", "Original Layer Color"]
+      }
+    },
+    "behind": { "name": { "zh": "阴影在图层后", "en": "Shadow Behind Layer" } },
+    "only_shadow": { "name": { "zh": "只显示阴影", "en": "Shadow Only" } },
+    "expand": { "name": { "zh": "远端放大", "en": "Far-End Expand" } },
+    "bend": { "name": { "zh": "启用弯折", "en": "Bend" } },
+    "smooth_bend": { "name": { "zh": "平滑弯折", "en": "Smooth Bend" } },
+    "bend_point": { "name": { "zh": "弯折点", "en": "Bend Point" } }
+  }
+}
