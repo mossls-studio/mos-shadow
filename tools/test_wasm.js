@@ -14,6 +14,7 @@ const PARAMS = [
   ['opacity', 1], ['fade_start', 1], ['fade_end', 1],
   ['color', 4], ['source', 1], ['behind', 1], ['only_shadow', 1],
   ['expand', 1],
+  ['bend', 1], ['bend_point', 2],
 ];
 
 function defaults() {
@@ -22,6 +23,7 @@ function defaults() {
     blur: 24, blur_start: 10, blur_end: 100, opacity: 80,
     fade_start: 20, fade_end: 100, color: [0.02, 0.02, 0.03, 1],
     source: 0, behind: 1, only_shadow: 0, expand: 0,
+    bend: 0, bend_point: [0.82, 0.10],
   };
 }
 
@@ -276,6 +278,44 @@ async function main() {
     throw new Error('expand did not widen the far end: ' + s0.span + ' -> ' + s1.span);
   }
 
+  // ---- 7. 弯折：bend on 末端向 bend_point 延伸；bend off 时该点不参与 ----
+  const p7 = defaults();
+  p7.blur = 0; p7.only_shadow = 1; p7.fade_start = 100; p7.fade_end = 100;
+  p7.color = [1, 0, 0.2, 1]; p7.bend = 0; p7.bend_point = [0.82, 0.10];
+  const bboxOf = (a) => {
+    let x0 = w, x1 = -1, y0 = h, y1 = -1;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        if (a[y * w + x] <= 0.1) continue;
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+      }
+    }
+    return { x0, x1, y0, y1 };
+  };
+  const r7 = render(p7, '07-bend-base');
+  const a7 = alphaOf(r7.out);
+  const bb7 = bboxOf(a7);
+  const p7b = { ...p7, bend: 1 };
+  const r7b = render(p7b, '07-bend');
+  const a7b = alphaOf(r7b.out);
+  const bb7b = bboxOf(a7b);
+  const p7n = { ...p7, bend: 0, bend_point: [0.2, 0.2] };
+  const r7n = render(p7n, '07-bend-off-other-point');
+  const a7n = alphaOf(r7n.out);
+  let diff7 = 0;
+  for (let i = 0; i < a7.length; i++) diff7 = Math.max(diff7, Math.abs(a7[i] - a7n[i]));
+  console.log('07 bend: base top=%d bend top=%d base right=%d bend right=%d off-diff=%s',
+    bb7.y0, bb7b.y0, bb7.x1, bb7b.x1, diff7.toExponential(1));
+  if (bb7b.y0 >= bb7.y0 - h * 0.02) {
+    throw new Error('bend did not extend upward: ' + bb7.y0 + ' -> ' + bb7b.y0);
+  }
+  if (diff7 > 1e-6) {
+    throw new Error('bend_point affected bend-off output: ' + diff7);
+  }
+
   function alphaOf(out) {
     const a = new Float32Array(w * h);
     for (let i = 0; i < w * h; i++) a[i] = out[i * 4 + 3];
@@ -303,6 +343,8 @@ async function main() {
     b6.only_shadow = 1; b6.blur = 0; b6.fade_start = 100; b6.fade_end = 100;
     b6.expand = 60;
     bench('expand60', b6);
+    const b7 = { ...b1, bend: 1, bend_point: [0.82, 0.10] };
+    bench('bend', b7);
     const wide = wideMask(w, h);
     bench('wide-basic', b1, wide);
     bench('wide-blur30', b3, wide);

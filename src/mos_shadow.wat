@@ -104,6 +104,16 @@
   (global $SPAN (mut f64) (f64.const 1))
   (global $GROW (mut f64) (f64.const 0))
   (global $UMID (mut f64) (f64.const 0))
+  (global $BENDON (mut i32) (i32.const 0))
+  (global $P0X (mut f64) (f64.const 0))
+  (global $P0Y (mut f64) (f64.const 0))
+  (global $P1X (mut f64) (f64.const 0))
+  (global $P1Y (mut f64) (f64.const 0))
+  (global $P2X (mut f64) (f64.const 0))
+  (global $P2Y (mut f64) (f64.const 0))
+  (global $BKA (mut f64) (f64.const 0))
+  (global $BKB (mut f64) (f64.const 0))
+  (global $BKC (mut f64) (f64.const 0))
 
   ;; ================= tiny helpers =================
   (func $imin (param $a i32) (param $b i32) (result i32)
@@ -196,6 +206,46 @@
     f64.const 512 f64.min
     f64.const 0.5 f64.add
     i32.trunc_f64_s)
+
+  ;; 二次弯折轴：解 (B(t)-Q)·N = 0，返回 t；无解/不在 [0,1] 返回 -1
+  (func $bezT (param $qx f64) (param $qy f64) (result f64)
+    (local $a f64) (local $b f64) (local $c f64)
+    (local $disc f64) (local $sq f64) (local $r0 f64) (local $r1 f64)
+    global.get $BKA local.set $a
+    global.get $BKB local.set $b
+    global.get $BKC
+    local.get $qx global.get $NX f64.mul
+    local.get $qy global.get $NY f64.mul f64.add f64.sub local.set $c
+    local.get $a f64.abs f64.const 1e-9 f64.lt
+    (if (then
+      local.get $b f64.abs f64.const 1e-9 f64.lt
+      (if (then f64.const -1 return))
+      local.get $c f64.neg local.get $b f64.div local.set $r0
+      local.get $r0 f64.const 0 f64.ge
+      local.get $r0 f64.const 1 f64.le i32.and
+      (if (then local.get $r0 return))
+      f64.const -1 return))
+    local.get $b local.get $b f64.mul
+    f64.const 4 local.get $a f64.mul local.get $c f64.mul f64.sub local.set $disc
+    local.get $disc f64.const 0 f64.lt (if (then f64.const -1 return))
+    local.get $disc f64.sqrt local.set $sq
+    local.get $b f64.neg local.get $sq f64.sub
+    f64.const 2 local.get $a f64.mul f64.div local.set $r0
+    local.get $b f64.neg local.get $sq f64.add
+    f64.const 2 local.get $a f64.mul f64.div local.set $r1
+    ;; 取较小的合法根
+    local.get $r0 local.get $r1 f64.lt
+    (if (then
+      local.get $r0 f64.const 0 f64.ge local.get $r0 f64.const 1 f64.le i32.and
+      (if (then local.get $r0 return))
+      local.get $r1 f64.const 0 f64.ge local.get $r1 f64.const 1 f64.le i32.and
+      (if (then local.get $r1 return)))
+      (else
+        local.get $r1 f64.const 0 f64.ge local.get $r1 f64.const 1 f64.le i32.and
+        (if (then local.get $r1 return))
+        local.get $r0 f64.const 0 f64.ge local.get $r0 f64.const 1 f64.le i32.and
+        (if (then local.get $r0 return))))
+    f64.const -1)
 
   ;; 没有阴影时的收尾：only_shadow 要清空输出，其他模式原样返回
   (func $noShadow (result i32)
@@ -434,6 +484,11 @@
     (local $umin f64) (local $umax f64) (local $uu f64)
     (local $bbx0 f64) (local $bbx1 f64) (local $bby0 f64) (local $bby1 f64)
     (local $qx f64) (local $qy f64)
+    (local $bx f64) (local $by f64) (local $omt f64)
+    (local $b0 f64) (local $b1 f64) (local $b2 f64)
+    (local $uout f64) (local $half f64) (local $smax f64)
+    (local $hx f64) (local $hy f64)
+    (local $minx f64) (local $maxx f64) (local $miny f64) (local $maxy f64)
 
     local.get $w i32.const 0 i32.le_s
     local.get $h i32.const 0 i32.le_s i32.or
@@ -482,6 +537,13 @@
     (if (then
       local.get $params f64.load offset=152 f64.const 100 f64.div
       f64.const -0.95 f64.max f64.const 3 f64.min global.set $GROW))
+
+    ;; bend / bend_point：只在 nparams>=23 时读取
+    local.get $nparams i32.const 23 i32.ge_s
+    (if (then
+      local.get $params f64.load offset=160 f64.const 0.5 f64.gt global.set $BENDON
+      local.get $params f64.load offset=168 global.set $P2X
+      local.get $params f64.load offset=176 global.set $P2Y))
 
     global.get $CR f32.demote_f64 global.set $CRF
     global.get $CG f32.demote_f64 global.set $CGF
@@ -626,6 +688,29 @@
     ;; 源切向范围的中心：远端放大绕这条中心线张开
     local.get $umin local.get $umax f64.add f64.const 0.5 f64.mul global.set $UMID
 
+    ;; ---- 二次弯折：B(0)=P0（基线中点），B(0.5)=C（方向点），B(1)=P2（弯折点）----
+    global.get $BENDON
+    (if (then
+      global.get $AX global.get $UMID global.get $LX f64.mul f64.add global.set $P0X
+      global.get $AY global.get $UMID global.get $LY f64.mul f64.add global.set $P0Y
+      ;; P1 = 2*C - 0.5*(P0+P2)，使 B(0.5)=C
+      f64.const 2 global.get $CX f64.mul
+      f64.const 0.5 global.get $P0X global.get $P2X f64.add f64.mul f64.sub
+      global.set $P1X
+      f64.const 2 global.get $CY f64.mul
+      f64.const 0.5 global.get $P0Y global.get $P2Y f64.add f64.mul f64.sub
+      global.set $P1Y
+      ;; B(t)=P0 + 2t(P1-P0) + t^2(P0-2P1+P2)
+      global.get $P0X f64.const 2 global.get $P1X f64.mul f64.sub global.get $P2X f64.add
+      global.get $NX f64.mul
+      global.get $P0Y f64.const 2 global.get $P1Y f64.mul f64.sub global.get $P2Y f64.add
+      global.get $NY f64.mul f64.add global.set $BKA
+      global.get $P1X global.get $P0X f64.sub global.get $NX f64.mul
+      global.get $P1Y global.get $P0Y f64.sub global.get $NY f64.mul f64.add
+      f64.const 2 f64.mul global.set $BKB
+      global.get $P0X global.get $NX f64.mul
+      global.get $P0Y global.get $NY f64.mul f64.add global.set $BKC))
+
     f64.const 1e30 local.set $bbx0
     f64.const -1e30 local.set $bbx1
     f64.const 1e30 local.set $bby0
@@ -676,6 +761,24 @@
     local.get $qx local.get $bbx1 f64.gt (if (then local.get $qx local.set $bbx1))
     local.get $qy local.get $bby0 f64.lt (if (then local.get $qy local.set $bby0))
     local.get $qy local.get $bby1 f64.gt (if (then local.get $qy local.set $bby1))
+
+    ;; ---- 弯折时把凸包 P0/P1/P2 与横向半宽并入 bbox ----
+    global.get $BENDON
+    (if (then
+      local.get $umin global.get $UMID f64.sub f64.abs
+      local.get $umax global.get $UMID f64.sub f64.abs f64.max local.set $half
+      f64.const 1 global.get $GROW f64.add f64.const 1 f64.max local.set $smax
+      local.get $half local.get $smax f64.mul local.set $half
+      local.get $half global.get $LX f64.abs f64.mul local.set $hx
+      local.get $half global.get $LY f64.abs f64.mul local.set $hy
+      global.get $P0X global.get $P1X f64.min global.get $P2X f64.min local.set $minx
+      global.get $P0X global.get $P1X f64.max global.get $P2X f64.max local.set $maxx
+      global.get $P0Y global.get $P1Y f64.min global.get $P2Y f64.min local.set $miny
+      global.get $P0Y global.get $P1Y f64.max global.get $P2Y f64.max local.set $maxy
+      local.get $minx local.get $hx f64.sub local.get $bbx0 f64.min local.set $bbx0
+      local.get $maxx local.get $hx f64.add local.get $bbx1 f64.max local.set $bbx1
+      local.get $miny local.get $hy f64.sub local.get $bby0 f64.min local.set $bby0
+      local.get $maxy local.get $hy f64.add local.get $bby1 f64.max local.set $bby1))
 
     local.get $bbx0 global.get $MAXR f64.convert_i32_s f64.sub
     f64.floor i32.trunc_f64_s i32.const 0 call $imax local.set $fx0
@@ -746,28 +849,59 @@
             local.get $x local.get $fx1 i32.gt_s br_if $fxend
             local.get $p f32.const 0 f32.store
             local.get $q i32.const 0 i32.store
-            local.get $t f64.const 0 f64.ge
-            local.get $t f64.const 1 f64.le i32.and
+            global.get $BENDON
             (if (then
-              local.get $p
-              local.get $sx local.get $sy call $sampleKey f32.store
-              local.get $q
-              local.get $t call $radT i32.store))
-            local.get $t local.get $dt f64.add local.set $t
-            local.get $u local.get $du f64.add local.set $u
-            local.get $hh local.get $dh f64.add local.set $hh
-            global.get $GROW f64.const 0 f64.eq
-            (if (then
-              local.get $sx local.get $dsx f64.add local.set $sx
-              local.get $sy local.get $dsy f64.add local.set $sy)
-              (else
-                local.get $s local.get $ds f64.add local.set $s
-                global.get $UMID
-                local.get $u global.get $UMID f64.sub local.get $s f64.div f64.add local.set $usrc
+              ;; 弯折：逐像素解 t，B(t)，再 u/usrc/sx/sy
+              local.get $x f64.convert_i32_s
+              local.get $y f64.convert_i32_s
+              call $bezT local.set $t
+              local.get $t f64.const 0 f64.ge
+              (if (then
+                f64.const 1 local.get $t f64.sub local.set $omt
+                local.get $omt local.get $omt f64.mul local.set $b0
+                f64.const 2 local.get $omt f64.mul local.get $t f64.mul local.set $b1
+                local.get $t local.get $t f64.mul local.set $b2
+                global.get $P0X local.get $b0 f64.mul
+                global.get $P1X local.get $b1 f64.mul f64.add
+                global.get $P2X local.get $b2 f64.mul f64.add local.set $bx
+                global.get $P0Y local.get $b0 f64.mul
+                global.get $P1Y local.get $b1 f64.mul f64.add
+                global.get $P2Y local.get $b2 f64.mul f64.add local.set $by
+                local.get $x f64.convert_i32_s local.get $bx f64.sub global.get $LX f64.mul
+                local.get $y f64.convert_i32_s local.get $by f64.sub global.get $LY f64.mul
+                f64.add local.set $uout
+                f64.const 1 global.get $GROW local.get $t f64.mul f64.add local.set $s
+                global.get $UMID local.get $uout local.get $s f64.div f64.add local.set $usrc
+                global.get $ANCHOR local.get $t global.get $SPAN f64.mul f64.add local.set $hh
                 global.get $AX local.get $usrc global.get $LX f64.mul f64.add
                 local.get $hh global.get $NX f64.mul f64.add local.set $sx
                 global.get $AY local.get $usrc global.get $LY f64.mul f64.add
-                local.get $hh global.get $NY f64.mul f64.add local.set $sy))
+                local.get $hh global.get $NY f64.mul f64.add local.set $sy
+                local.get $p local.get $sx local.get $sy call $sampleKey f32.store
+                local.get $q local.get $t call $radT i32.store)))
+              (else
+                local.get $t f64.const 0 f64.ge
+                local.get $t f64.const 1 f64.le i32.and
+                (if (then
+                  local.get $p
+                  local.get $sx local.get $sy call $sampleKey f32.store
+                  local.get $q
+                  local.get $t call $radT i32.store))
+                local.get $t local.get $dt f64.add local.set $t
+                local.get $u local.get $du f64.add local.set $u
+                local.get $hh local.get $dh f64.add local.set $hh
+                global.get $GROW f64.const 0 f64.eq
+                (if (then
+                  local.get $sx local.get $dsx f64.add local.set $sx
+                  local.get $sy local.get $dsy f64.add local.set $sy)
+                  (else
+                    local.get $s local.get $ds f64.add local.set $s
+                    global.get $UMID
+                    local.get $u global.get $UMID f64.sub local.get $s f64.div f64.add local.set $usrc
+                    global.get $AX local.get $usrc global.get $LX f64.mul f64.add
+                    local.get $hh global.get $NX f64.mul f64.add local.set $sx
+                    global.get $AY local.get $usrc global.get $LY f64.mul f64.add
+                    local.get $hh global.get $NY f64.mul f64.add local.set $sy))))
             local.get $p i32.const 4 i32.add local.set $p
             local.get $q i32.const 4 i32.add local.set $q
             local.get $x i32.const 1 i32.add local.set $x
@@ -798,6 +932,11 @@
         (block $cxend
           (loop $cxl
             local.get $x local.get $fx1 i32.gt_s br_if $cxend
+            global.get $BENDON
+            (if (then
+              local.get $x f64.convert_i32_s
+              local.get $y f64.convert_i32_s
+              call $bezT local.set $t))
             local.get $t call $fadeT global.get $FADEK f64.mul
             f32.demote_f64 local.set $fade
             global.get $SH
@@ -849,7 +988,9 @@
             local.get $ob f32.const 0 f32.max f32.const 1 f32.min f32.store offset=8
             local.get $p
             local.get $oa f32.const 0 f32.max f32.const 1 f32.min f32.store offset=12
-            local.get $t local.get $dt f64.add local.set $t
+            global.get $BENDON
+            i32.eqz
+            (if (then local.get $t local.get $dt f64.add local.set $t))
             local.get $x i32.const 1 i32.add local.set $x
             br $cxl))
         local.get $y i32.const 1 i32.add local.set $y

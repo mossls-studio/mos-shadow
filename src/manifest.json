@@ -1,11 +1,11 @@
 {
-  "api": 1,
+  "api": 2,
   "id": "mos.shadow",
   "name": "mos_shadow",
   "category": "MOS",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "author": "MOSSLS",
-  "description": "方向轴阴影：用一条基线（两个点）和第三个点定义投影方向与长度，把图层轮廓压平后沿轴拉伸成阴影；离基线越远越模糊、越透明，颜色可调；远端放大可让阴影离基线越远越宽。",
+  "description": "方向轴阴影：用一条基线（两个点）和第三个点定义投影方向与长度，把图层轮廓压平后沿轴拉伸成阴影；离基线越远越模糊、越透明，颜色可调；远端放大可让阴影离基线越远越宽；可选二次弯折点让阴影末端再拐一次。",
   "params": [
     {"id": "axis_start", "name": "基线起点", "type": "point", "default": [0.12, 0.62]},
     {"id": "axis_end", "name": "基线终点", "type": "point", "default": [0.88, 0.62]},
@@ -20,6 +20,8 @@
     {"id": "source", "name": "阴影源", "type": "popup", "options": ["Alpha", "Luminance"], "default": 0},
     {"id": "behind", "name": "阴影在图层后", "type": "checkbox", "default": true},
     {"id": "only_shadow", "name": "只显示阴影", "type": "checkbox", "default": false},
-    {"id": "expand", "name": "远端放大", "type": "slider", "default": 0, "min": -100, "max": 200, "decimals": 0}
+    {"id": "expand", "name": "远端放大", "type": "slider", "default": 0, "min": -100, "max": 200, "decimals": 0},
+    {"id": "bend", "name": "启用弯折", "type": "checkbox", "default": false, "group": "弯折"},
+    {"id": "bend_point", "name": "弯折点", "type": "point", "default": [0.82, 0.10], "group": "弯折"}
   ]
 }
