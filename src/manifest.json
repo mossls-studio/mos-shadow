@@ -3,7 +3,7 @@
   "id": "mos.shadow",
   "name": "mos_shadow",
   "category": "MOS",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "author": "MOSSLS",
   "description": "方向轴阴影：用一条基线（两个点）和第三个点定义投影方向与长度，把图层轮廓压平后沿轴拉伸成阴影；离基线越远越模糊、越透明，颜色可调；可选直角/平滑二次弯折，可用原图层颜色，模糊与淡出可单独开关。",
   "params": [

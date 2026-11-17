@@ -691,7 +691,7 @@
             global.get $PIX
             local.get $y global.get $W i32.mul local.get $x i32.add
             i32.const 16 i32.mul i32.add local.set $p
-            global.get $SRC_MODE
+            global.get $SRC_MODE i32.const 1 i32.eq
             (if (result f32)
               (then
                 local.get $p f32.load f32.const 0.2126 f32.mul
