@@ -64,7 +64,7 @@ async function main() {
     const p = path.join(ROOT, f);
     if (fs.existsSync(p)) fs.copyFileSync(p, path.join(distDir, f));
   }
-  for (const f of ['preview.png', 'preview-expand.png', 'preview-bend.png']) {
+  for (const f of ['preview.png', 'preview-expand.png', 'preview-bend.png', 'preview-bend-smooth.png', 'preview-layer-color.png']) {
     const p = path.join(ROOT, 'docs', f);
     if (fs.existsSync(p)) {
       fs.mkdirSync(path.join(distDir, 'docs'), { recursive: true });

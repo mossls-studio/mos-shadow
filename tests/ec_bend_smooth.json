@@ -1,0 +1,20 @@
+[
+  {"id":"effect.plugins.load","params":{"path":"D:\\mossls\\mos\\vfx\\mos_阴影\\dist\\mos_shadow\\mos_shadow.wasm"}},
+  {"id":"comp.new","params":{"name":"MOSShadowBendDemo","width":1280,"height":720,"frameRate":30,"duration":5,"background":"#e7e2d8"}},
+  {"id":"layer.newText","params":{"text":"SHADOW","size":190,"fill":"#16181d","position":[540,300],"font":"Inter","style":"Bold"}},
+  {"id":"effect.apply","params":{"layer":"#1","effect":"mos.shadow"}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/axis_start","value":[128,432]}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/axis_end","value":[1152,432]}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/aim","value":[844.8,129.6]}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/blur","value":26}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/blur_start","value":12}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/opacity","value":78}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/fade_start","value":15}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/color","value":[0.1,0.08,0.07,1]}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/expand","value":30}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/bend","value":true}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/smooth_bend","value":true}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/bend_point","value":[1024,72]}},
+  {"id":"renderQueue.add","params":{"comp":1,"format":"png","output":"D:\\mossls\\mos\\vfx\\mos_阴影\\tests\\\\bend-smooth\\\\frame.png","timeSpan":"custom","start":0,"end":0.03,"frameRate":30,"channels":"rgb"}},
+  {"id":"renderQueue.render","params":{"wait":true}}
+]

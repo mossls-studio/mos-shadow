@@ -13,6 +13,7 @@
   {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/color","value":[0.1,0.08,0.07,1]}},
   {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/expand","value":30}},
   {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/bend","value":true}},
+  {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/smooth_bend","value":false}},
   {"id":"prop.set","params":{"layer":"#1","path":"effects/#1/bend_point","value":[1024,72]}},
   {"id":"renderQueue.add","params":{"comp":1,"format":"png","output":"D:\\mossls\\mos\\vfx\\mos_阴影\\tests\\bend\\frame.png","timeSpan":"custom","start":0,"end":0.03,"frameRate":30,"channels":"rgb"}},
   {"id":"renderQueue.render","params":{"wait":true}}

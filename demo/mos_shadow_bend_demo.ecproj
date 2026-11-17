@@ -22,7 +22,7 @@
   "items": {
     "1": {
       "id": 1,
-      "name": "MOSShadowBendDemo",
+      "name": "MOSShadowBendStar",
       "label": "Sandstone",
       "comment": "",
       "parent": null,
@@ -49,7 +49,7 @@
         "layers": [
           {
             "id": 2,
-            "name": "SHADOW",
+            "name": "★",
             "name_follows_text": true,
             "source": {
               "type": "Text"
@@ -85,7 +85,7 @@
             "props": {
               "uid": 3,
               "match": "layer",
-              "name": "SHADOW",
+              "name": "★",
               "kind": {
                 "kind": "Plain"
               },
@@ -109,14 +109,14 @@
                       "value": {
                         "t": "Text",
                         "v": {
-                          "text": "SHADOW",
-                          "font": "Inter",
-                          "style": "Bold",
-                          "size": 190.0,
+                          "text": "★",
+                          "font": "Segoe UI Symbol",
+                          "style": "Regular",
+                          "size": 420.0,
                           "fill": [
-                            0.08627451,
-                            0.09411765,
-                            0.11372549,
+                            0.827451,
+                            0.13333334,
+                            0.2,
                             1.0
                           ],
                           "stroke": [
@@ -504,7 +504,7 @@
                             "t": "Vec2",
                             "v": [
                               128.0,
-                              432.0
+                              560.0
                             ]
                           },
                           "ui": {
@@ -526,7 +526,7 @@
                             "t": "Vec2",
                             "v": [
                               1152.0,
-                              432.0
+                              560.0
                             ]
                           },
                           "ui": {
@@ -547,8 +547,8 @@
                           "value": {
                             "t": "Vec2",
                             "v": [
-                              844.8,
-                              129.6
+                              900.0,
+                              210.0
                             ]
                           },
                           "ui": {
@@ -564,11 +564,30 @@
                         {
                           "node": "Prop",
                           "uid": 45,
+                          "match": "blur_on",
+                          "name": "启用模糊",
+                          "value": {
+                            "t": "Bool",
+                            "v": true
+                          },
+                          "ui": {
+                            "kind": "Checkbox"
+                          },
+                          "spatial": false,
+                          "hold_only": true,
+                          "three_d_only": false,
+                          "two_d_only": false,
+                          "shown_dims": 0,
+                          "static_only": false
+                        },
+                        {
+                          "node": "Prop",
+                          "uid": 46,
                           "match": "blur",
                           "name": "最大模糊",
                           "value": {
                             "t": "Scalar",
-                            "v": 26.0
+                            "v": 22.0
                           },
                           "ui": {
                             "kind": "Slider",
@@ -587,12 +606,12 @@
                         },
                         {
                           "node": "Prop",
-                          "uid": 46,
+                          "uid": 47,
                           "match": "blur_start",
                           "name": "模糊起点",
                           "value": {
                             "t": "Scalar",
-                            "v": 12.0
+                            "v": 10.0
                           },
                           "ui": {
                             "kind": "Slider",
@@ -611,7 +630,7 @@
                         },
                         {
                           "node": "Prop",
-                          "uid": 47,
+                          "uid": 48,
                           "match": "blur_end",
                           "name": "模糊终点",
                           "value": {
@@ -635,47 +654,18 @@
                         },
                         {
                           "node": "Prop",
-                          "uid": 48,
-                          "match": "opacity",
-                          "name": "不透明度",
-                          "value": {
-                            "t": "Scalar",
-                            "v": 78.0
-                          },
-                          "ui": {
-                            "kind": "Slider",
-                            "min": 0.0,
-                            "max": 100.0,
-                            "slider_min": 0.0,
-                            "slider_max": 100.0,
-                            "decimals": 0
-                          },
-                          "spatial": false,
-                          "hold_only": false,
-                          "three_d_only": false,
-                          "two_d_only": false,
-                          "shown_dims": 0,
-                          "static_only": false
-                        },
-                        {
-                          "node": "Prop",
                           "uid": 49,
-                          "match": "fade_start",
-                          "name": "淡出起点",
+                          "match": "fade_on",
+                          "name": "启用淡出",
                           "value": {
-                            "t": "Scalar",
-                            "v": 15.0
+                            "t": "Bool",
+                            "v": true
                           },
                           "ui": {
-                            "kind": "Slider",
-                            "min": 0.0,
-                            "max": 100.0,
-                            "slider_min": 0.0,
-                            "slider_max": 100.0,
-                            "decimals": 0
+                            "kind": "Checkbox"
                           },
                           "spatial": false,
-                          "hold_only": false,
+                          "hold_only": true,
                           "three_d_only": false,
                           "two_d_only": false,
                           "shown_dims": 0,
@@ -684,6 +674,54 @@
                         {
                           "node": "Prop",
                           "uid": 50,
+                          "match": "opacity",
+                          "name": "不透明度",
+                          "value": {
+                            "t": "Scalar",
+                            "v": 80.0
+                          },
+                          "ui": {
+                            "kind": "Slider",
+                            "min": 0.0,
+                            "max": 100.0,
+                            "slider_min": 0.0,
+                            "slider_max": 100.0,
+                            "decimals": 0
+                          },
+                          "spatial": false,
+                          "hold_only": false,
+                          "three_d_only": false,
+                          "two_d_only": false,
+                          "shown_dims": 0,
+                          "static_only": false
+                        },
+                        {
+                          "node": "Prop",
+                          "uid": 51,
+                          "match": "fade_start",
+                          "name": "淡出起点",
+                          "value": {
+                            "t": "Scalar",
+                            "v": 18.0
+                          },
+                          "ui": {
+                            "kind": "Slider",
+                            "min": 0.0,
+                            "max": 100.0,
+                            "slider_min": 0.0,
+                            "slider_max": 100.0,
+                            "decimals": 0
+                          },
+                          "spatial": false,
+                          "hold_only": false,
+                          "three_d_only": false,
+                          "two_d_only": false,
+                          "shown_dims": 0,
+                          "static_only": false
+                        },
+                        {
+                          "node": "Prop",
+                          "uid": 52,
                           "match": "fade_end",
                           "name": "淡出终点",
                           "value": {
@@ -707,15 +745,15 @@
                         },
                         {
                           "node": "Prop",
-                          "uid": 51,
+                          "uid": 53,
                           "match": "color",
                           "name": "阴影颜色",
                           "value": {
                             "t": "Color",
                             "v": [
+                              0.12,
                               0.1,
                               0.08,
-                              0.07,
                               1.0
                             ]
                           },
@@ -731,7 +769,31 @@
                         },
                         {
                           "node": "Prop",
-                          "uid": 52,
+                          "uid": 54,
+                          "match": "color_opacity",
+                          "name": "颜色不透明度",
+                          "value": {
+                            "t": "Scalar",
+                            "v": 100.0
+                          },
+                          "ui": {
+                            "kind": "Slider",
+                            "min": 0.0,
+                            "max": 100.0,
+                            "slider_min": 0.0,
+                            "slider_max": 100.0,
+                            "decimals": 0
+                          },
+                          "spatial": false,
+                          "hold_only": false,
+                          "three_d_only": false,
+                          "two_d_only": false,
+                          "shown_dims": 0,
+                          "static_only": false
+                        },
+                        {
+                          "node": "Prop",
+                          "uid": 55,
                           "match": "source",
                           "name": "阴影源",
                           "value": {
@@ -742,7 +804,8 @@
                             "kind": "Popup",
                             "options": [
                               "Alpha",
-                              "Luminance"
+                              "Luminance",
+                              "Layer Color"
                             ]
                           },
                           "spatial": false,
@@ -754,7 +817,7 @@
                         },
                         {
                           "node": "Prop",
-                          "uid": 53,
+                          "uid": 56,
                           "match": "behind",
                           "name": "阴影在图层后",
                           "value": {
@@ -773,7 +836,7 @@
                         },
                         {
                           "node": "Prop",
-                          "uid": 54,
+                          "uid": 57,
                           "match": "only_shadow",
                           "name": "只显示阴影",
                           "value": {
@@ -792,12 +855,12 @@
                         },
                         {
                           "node": "Prop",
-                          "uid": 55,
+                          "uid": 58,
                           "match": "expand",
                           "name": "远端放大",
                           "value": {
                             "t": "Scalar",
-                            "v": 0.0
+                            "v": 25.0
                           },
                           "ui": {
                             "kind": "Slider",
@@ -816,7 +879,7 @@
                         },
                         {
                           "node": "Prop",
-                          "uid": 56,
+                          "uid": 59,
                           "match": "bend",
                           "name": "启用弯折",
                           "value": {
@@ -835,14 +898,33 @@
                         },
                         {
                           "node": "Prop",
-                          "uid": 57,
+                          "uid": 60,
+                          "match": "smooth_bend",
+                          "name": "平滑弯折",
+                          "value": {
+                            "t": "Bool",
+                            "v": false
+                          },
+                          "ui": {
+                            "kind": "Checkbox"
+                          },
+                          "spatial": false,
+                          "hold_only": true,
+                          "three_d_only": false,
+                          "two_d_only": false,
+                          "shown_dims": 0,
+                          "static_only": false
+                        },
+                        {
+                          "node": "Prop",
+                          "uid": 61,
                           "match": "bend_point",
                           "name": "弯折点",
                           "value": {
                             "t": "Vec2",
                             "v": [
-                              980.0,
-                              140.0
+                              1160.0,
+                              210.0
                             ]
                           },
                           "ui": {
@@ -900,8 +982,8 @@
                       "value": {
                         "t": "Vec3",
                         "v": [
-                          540.0,
-                          300.0,
+                          470.0,
+                          330.0,
                           0.0
                         ]
                       },
@@ -1295,7 +1377,7 @@
       }
     }
   },
-  "next_id": 58,
+  "next_id": 62,
   "render_queue": [
     {
       "id": 1,
@@ -1332,7 +1414,7 @@
         "format": "PngSequence",
         "channels": "Rgb",
         "alpha_mode": "Straight",
-        "output": "D:\\mossls\\mos\\vfx\\mos_阴影\\tests\\bend2\\frame.png",
+        "output": "D:\\mossls\\mos\\vfx\\mos_阴影\\tests\\bend-star\\frame.png",
         "quality": 90,
         "bitrate_kbps": 10000,
         "webm_bitrate": false,
@@ -1372,9 +1454,9 @@
         "opus_application": "Audio",
         "include_project_link": true
       },
-      "started": 1794918111,
-      "render_time": 1.0582031,
-      "last_output": "D:\\mossls\\mos\\vfx\\mos_阴影\\tests\\bend2\\frame_00000.png"
+      "started": 1794921410,
+      "render_time": 0.7840789,
+      "last_output": "D:\\mossls\\mos\\vfx\\mos_阴影\\tests\\bend-star\\frame_00000.png"
     }
   ]
 }

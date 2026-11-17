@@ -3,25 +3,35 @@
   "id": "mos.shadow",
   "name": "mos_shadow",
   "category": "MOS",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "author": "MOSSLS",
-  "description": "方向轴阴影：用一条基线（两个点）和第三个点定义投影方向与长度，把图层轮廓压平后沿轴拉伸成阴影；离基线越远越模糊、越透明，颜色可调；远端放大可让阴影离基线越远越宽；可选二次弯折点让阴影末端再拐一次。",
+  "description": "方向轴阴影：用一条基线（两个点）和第三个点定义投影方向与长度，把图层轮廓压平后沿轴拉伸成阴影；离基线越远越模糊、越透明，颜色可调；可选直角/平滑二次弯折，可用原图层颜色，模糊与淡出可单独开关。",
   "params": [
     {"id": "axis_start", "name": "基线起点", "type": "point", "default": [0.12, 0.62]},
     {"id": "axis_end", "name": "基线终点", "type": "point", "default": [0.88, 0.62]},
     {"id": "aim", "name": "方向/长度", "type": "point", "default": [0.70, 0.24]},
-    {"id": "blur", "name": "最大模糊", "type": "slider", "default": 24, "min": 0, "max": 300, "decimals": 1},
-    {"id": "blur_start", "name": "模糊起点", "type": "slider", "default": 10, "min": 0, "max": 100, "decimals": 0},
-    {"id": "blur_end", "name": "模糊终点", "type": "slider", "default": 100, "min": 0, "max": 100, "decimals": 0},
-    {"id": "opacity", "name": "不透明度", "type": "slider", "default": 80, "min": 0, "max": 100, "decimals": 0},
-    {"id": "fade_start", "name": "淡出起点", "type": "slider", "default": 20, "min": 0, "max": 100, "decimals": 0},
-    {"id": "fade_end", "name": "淡出终点", "type": "slider", "default": 100, "min": 0, "max": 100, "decimals": 0},
-    {"id": "color", "name": "阴影颜色", "type": "color", "default": [0.02, 0.02, 0.03, 1.0]},
-    {"id": "source", "name": "阴影源", "type": "popup", "options": ["Alpha", "Luminance"], "default": 0},
-    {"id": "behind", "name": "阴影在图层后", "type": "checkbox", "default": true},
-    {"id": "only_shadow", "name": "只显示阴影", "type": "checkbox", "default": false},
+
+    {"id": "blur_on", "name": "启用模糊", "type": "checkbox", "default": true, "group": "模糊和颜色"},
+    {"id": "blur", "name": "最大模糊", "type": "slider", "default": 24, "min": 0, "max": 300, "decimals": 1, "group": "模糊和颜色"},
+    {"id": "blur_start", "name": "模糊起点", "type": "slider", "default": 10, "min": 0, "max": 100, "decimals": 0, "group": "模糊和颜色"},
+    {"id": "blur_end", "name": "模糊终点", "type": "slider", "default": 100, "min": 0, "max": 100, "decimals": 0, "group": "模糊和颜色"},
+
+    {"id": "fade_on", "name": "启用淡出", "type": "checkbox", "default": true, "group": "模糊和颜色"},
+    {"id": "opacity", "name": "不透明度", "type": "slider", "default": 80, "min": 0, "max": 100, "decimals": 0, "group": "模糊和颜色"},
+    {"id": "fade_start", "name": "淡出起点", "type": "slider", "default": 20, "min": 0, "max": 100, "decimals": 0, "group": "模糊和颜色"},
+    {"id": "fade_end", "name": "淡出终点", "type": "slider", "default": 100, "min": 0, "max": 100, "decimals": 0, "group": "模糊和颜色"},
+
+    {"id": "color", "name": "阴影颜色", "type": "color", "default": [0.02, 0.02, 0.03, 1.0], "group": "模糊和颜色"},
+    {"id": "color_opacity", "name": "颜色不透明度", "type": "slider", "default": 100, "min": 0, "max": 100, "decimals": 0, "group": "模糊和颜色"},
+
+    {"id": "source", "name": "阴影源", "type": "popup", "options": ["Alpha", "Luminance", "原图层颜色"], "default": 0, "group": "模糊和颜色"},
+    {"id": "behind", "name": "阴影在图层后", "type": "checkbox", "default": true, "group": "模糊和颜色"},
+    {"id": "only_shadow", "name": "只显示阴影", "type": "checkbox", "default": false, "group": "模糊和颜色"},
+
     {"id": "expand", "name": "远端放大", "type": "slider", "default": 0, "min": -100, "max": 200, "decimals": 0},
+
     {"id": "bend", "name": "启用弯折", "type": "checkbox", "default": false, "group": "弯折"},
+    {"id": "smooth_bend", "name": "平滑弯折", "type": "checkbox", "default": false, "group": "弯折"},
     {"id": "bend_point", "name": "弯折点", "type": "point", "default": [0.82, 0.10], "group": "弯折"}
   ]
 }

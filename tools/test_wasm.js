@@ -10,20 +10,22 @@ const OUT = path.join(ROOT, 'tests');
 
 const PARAMS = [
   ['axis_start', 2], ['axis_end', 2], ['aim', 2],
-  ['blur', 1], ['blur_start', 1], ['blur_end', 1],
-  ['opacity', 1], ['fade_start', 1], ['fade_end', 1],
-  ['color', 4], ['source', 1], ['behind', 1], ['only_shadow', 1],
+  ['blur_on', 1], ['blur', 1], ['blur_start', 1], ['blur_end', 1],
+  ['fade_on', 1], ['opacity', 1], ['fade_start', 1], ['fade_end', 1],
+  ['color', 4], ['color_opacity', 1],
+  ['source', 1], ['behind', 1], ['only_shadow', 1],
   ['expand', 1],
-  ['bend', 1], ['bend_point', 2],
+  ['bend', 1], ['smooth_bend', 1], ['bend_point', 2],
 ];
 
 function defaults() {
   return {
     axis_start: [0.12, 0.62], axis_end: [0.88, 0.62], aim: [0.70, 0.24],
-    blur: 24, blur_start: 10, blur_end: 100, opacity: 80,
-    fade_start: 20, fade_end: 100, color: [0.02, 0.02, 0.03, 1],
+    blur_on: 1, blur: 24, blur_start: 10, blur_end: 100,
+    fade_on: 1, opacity: 80, fade_start: 20, fade_end: 100,
+    color: [0.02, 0.02, 0.03, 1], color_opacity: 100,
     source: 0, behind: 1, only_shadow: 0, expand: 0,
-    bend: 0, bend_point: [0.82, 0.10],
+    bend: 0, smooth_bend: 0, bend_point: [0.82, 0.10],
   };
 }
 
@@ -314,6 +316,72 @@ async function main() {
   }
   if (diff7 > 1e-6) {
     throw new Error('bend_point affected bend-off output: ' + diff7);
+  }
+
+  // ---- 7b. 平滑弯折：应与直角折线不同，且同样向上延伸 ----
+  const p7s = { ...p7b, smooth_bend: 1 };
+  const r7s = render(p7s, '07-bend-smooth');
+  const a7s = alphaOf(r7s.out);
+  const bb7s = bboxOf(a7s);
+  let diff7s = 0;
+  for (let i = 0; i < a7b.length; i++) diff7s = Math.max(diff7s, Math.abs(a7b[i] - a7s[i]));
+  console.log('07b smooth: top=%d right=%d diffSharp=%s',
+    bb7s.y0, bb7s.x1, diff7s.toExponential(2));
+  if (diff7s < 1e-4) {
+    throw new Error('smooth_bend produced identical output');
+  }
+  if (bb7s.y0 >= bb7.y0 - h * 0.02) {
+    throw new Error('smooth bend did not extend upward: ' + bb7.y0 + ' -> ' + bb7s.y0);
+  }
+
+  // ---- 8. blur_on / fade_on 开关 ----
+  const sampleOut = (out, t, u) => {
+    const px = A[0] + u * L[0] + t * W[0];
+    const py = A[1] + u * L[1] + t * W[1];
+    const xi = Math.round(px), yi = Math.round(py);
+    return out[(yi * w + xi) * 4 + 3];
+  };
+  const p8 = defaults();
+  p8.only_shadow = 1; p8.blur = 30; p8.blur_start = 0;
+  p8.fade_start = 100; p8.fade_end = 100; p8.opacity = 100;
+  const r8 = render({ ...p8, blur_on: 1 }, '08-blur-on');
+  const a8 = alphaOf(r8.out);
+  const r8n = render({ ...p8, blur_on: 0 }, '08-blur-off');
+  const a8n = alphaOf(r8n.out);
+  let d8 = 0;
+  for (let i = 0; i < w * h; i++) d8 = Math.max(d8, Math.abs(a8[i] - a8n[i]));
+  console.log('08 blur_on: diff=%s', d8.toExponential(2));
+  if (!(d8 > 0.05)) throw new Error('blur_on did not change output');
+
+  const p9 = defaults();
+  p9.only_shadow = 1; p9.blur = 0; p9.fade_start = 50; p9.fade_end = 100;
+  p9.opacity = 100; p9.color = [0, 0, 1, 1];
+  const r9 = render({ ...p9, fade_on: 1 }, '09-fade-on');
+  const a9on = sampleOut(r9.out, 0.75, baseLen * 0.5);
+  const r9n = render({ ...p9, fade_on: 0 }, '09-fade-off');
+  const a9off = sampleOut(r9n.out, 0.75, baseLen * 0.5);
+  console.log('09 fade_on: on=%s off=%s', a9on.toFixed(3), a9off.toFixed(3));
+  if (!(a9off > a9on + 0.1)) throw new Error('fade_on did not change far-end alpha');
+
+  // ---- 9. Layer Color 源 + 颜色不透明度 ----
+  const p10 = defaults();
+  p10.only_shadow = 1; p10.blur = 0; p10.fade_start = 100; p10.fade_end = 100;
+  p10.opacity = 100; p10.source = 2; p10.color = [0, 0, 0, 1];
+  const r10 = render({ ...p10, color_opacity: 100 }, '10-layer-color');
+  let maxR10 = 0, maxA10 = 0;
+  for (let i = 0; i < w * h; i++) {
+    maxR10 = Math.max(maxR10, r10.out[i * 4]);
+    maxA10 = Math.max(maxA10, r10.out[i * 4 + 3]);
+  }
+  console.log('10 layer color: maxR=%s maxA=%s', maxR10.toFixed(3), maxA10.toFixed(3));
+  if (!(maxR10 > 0.5)) throw new Error('Layer Color source did not carry source RGB');
+
+  const r10h = render({ ...p10, color_opacity: 50 }, '10-layer-color-50');
+  let maxAh = 0;
+  for (let i = 0; i < w * h; i++) maxAh = Math.max(maxAh, r10h.out[i * 4 + 3]);
+  console.log('10b color_opacity 50: maxA=%s', maxAh.toFixed(3));
+  if (!(maxAh < maxA10 * 0.7 && maxAh > 0.3)) {
+    throw new Error('color_opacity did not scale shadow alpha: ' + maxAh + ' vs ' + maxA10);
   }
 
   function alphaOf(out) {
