@@ -184,3 +184,9 @@ docs/preview-bend-smooth.png  平滑弯折预览
 docs/preview-layer-color.png  原图层颜色预览
 docs/preview-layer-color-text.png  原图层颜色文字预览（0.6.2 边缘修复）
 ```
+
+---
+
+## 许可 / License
+
+AGPL-3.0-or-later（GNU Affero 通用公共许可证第 3 版或更高版本），见仓库根目录的 `LICENSE`。
